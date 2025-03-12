@@ -12,7 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Chart.js-Zeitadapter (für die Zeitachse) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-  <!-- Hinweis: Chart.js Zoom-Plugin wurde entfernt -->
 
   <style>
     /* Grundlayout */
@@ -31,7 +30,7 @@
     }
     .grid-container {
       display: grid;
-      grid-template-columns: 1fr 1fr; /* 2 Spalten */
+      grid-template-columns: 1fr 1fr; /* 2 Spalten im Desktop */
       grid-gap: 1rem;
       max-width: 1200px;
       margin: 1rem auto;
@@ -91,11 +90,18 @@
     button:hover {
       background: #09405a;
     }
+
+    /* Bei schmalen Bildschirmen (<= 768px): nur 1 Spalte,
+       LED-Status-Fenster an erster Stelle */
     @media (max-width: 768px) {
       .grid-container {
-        grid-template-columns: 1fr; /* nur 1 Spalte */
+        grid-template-columns: 1fr;
+      }
+      .lamp-container {
+        order: -1; /* LED-Status-Fenster an erste Stelle */
       }
     }
+
     /* Dark Mode: Header bleibt im ABB-Blau */
     @media (prefers-color-scheme: dark) {
       body {
@@ -172,12 +178,12 @@
     const textColor = isDarkMode ? '#fff' : '#000';
     const gridColor = isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
 
-    // Gemeinsame X-Achsen Optionen
+    // Gemeinsame X-Achsen Optionen mit Sekundenanzeige im Tooltip
     const xOptions = {
       type: 'time',
       time: {
         unit: 'minute',
-        tooltipFormat: 'HH:mm',
+        tooltipFormat: 'HH:mm:ss',
         displayFormats: { minute: 'HH:mm' }
       },
       ticks: { color: textColor },
@@ -266,7 +272,7 @@
             grid: { color: gridColor },
             title: { display: true, text: 'Luftfeuchtigkeit (%)', color: textColor },
             min: 0,
-            max: 100
+            max: 80
           }
         },
         plugins: {
@@ -293,7 +299,7 @@
 
     client.on("message", function(topic, message) {
       const msg = message.toString();
-      const now = new Date();
+      const now = new Date();  // Aktuelle Uhrzeit
 
       switch (topic) {
         case "office/co2":
