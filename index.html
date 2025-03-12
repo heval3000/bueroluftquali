@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Büroluftqualität</title>
+  <title>Büroluftqualiät Messstation</title>
   <!-- Responsives Layout -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -12,8 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Chart.js-Zeitadapter (für die Zeitachse) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-  <!-- Chart.js Zoom-Plugin (wir nutzen nur horizontales Panning) -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@latest/dist/chartjs-plugin-zoom.min.js"></script>
+  <!-- Hinweis: Chart.js Zoom-Plugin wurde entfernt -->
 
   <style>
     /* Grundlayout */
@@ -29,16 +28,6 @@
       color: #fff;
       text-align: center;
       padding: 1rem;
-      position: relative; /* für absolute Positionierung des rechten Textes */
-    }
-    /* Header-Text rechts oben */
-    .header-right {
-      position: absolute;
-      top: 0.5rem;
-      right: 1rem;
-      text-align: right;
-      font-size: 0.8rem;
-      line-height: 1.2;
     }
     .grid-container {
       display: grid;
@@ -114,7 +103,7 @@
         color: #e0e0e0;
       }
       header {
-        background: #0C5470; /* Auch im Dunkelmodus ABB-Blau */
+        background: #0C5470;
       }
       .chart-container,
       .lamp-container {
@@ -130,12 +119,7 @@
 </head>
 <body>
   <header>
-    <h2>Büroluftqualität</h2>
-    <div class="header-right">
-      Yücel Aslankan<br>
-      ABB Technikerschule<br>
-      B22-es5.1-PRG_UC1A
-    </div>
+    <h2>Büroluftqualiät Messstation</h2>
   </header>
 
   <div class="grid-container">
@@ -183,62 +167,26 @@
     let co2Data = [], tempData = [], humData = [];
     let ledStatus = "", recommendation = "";
 
-    // Wird benutzt, um automatisch nur 10 min anzuzeigen,
-    // bis der User das erste Mal manuell scrollt (panned).
-    let autoRange = true;
-
     // Dynamische Farben für Chart.js (Dark Mode)
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const textColor = isDarkMode ? '#fff' : '#000';
     const gridColor = isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)';
 
-    // Gemeinsame Optionen inkl. Panning (kein Zoom)
-    const commonOptions = {
-      scales: {
-        x: {
-          type: 'time',
-          time: {
-            unit: 'minute',
-            tooltipFormat: 'HH:mm',
-            displayFormats: { minute: 'HH:mm' }
-          },
-          ticks: { color: textColor },
-          grid: { color: gridColor },
-          title: { display: true, text: 'Zeit', color: textColor }
-        },
-        y: {
-          ticks: { color: textColor },
-          grid: { color: gridColor },
-          title: { display: true, text: 'Messwert', color: textColor }
-        }
+    // Gemeinsame X-Achsen Optionen
+    const xOptions = {
+      type: 'time',
+      time: {
+        unit: 'minute',
+        tooltipFormat: 'HH:mm',
+        displayFormats: { minute: 'HH:mm' }
       },
-      plugins: {
-        legend: { labels: { color: textColor } },
-        zoom: {
-          // Nur horizontales Panning, kein Zoom
-          pan: {
-            enabled: true,
-            mode: 'x',
-            onPanComplete({chart}) {
-              // Sobald man manuell scrollt, schalten wir autoRange aus
-              autoRange = false;
-            }
-          },
-          zoom: {
-            wheel: { enabled: false },
-            pinch: { enabled: false },
-            mode: 'x'
-          }
-        }
-      }
+      ticks: { color: textColor },
+      grid: { color: gridColor },
+      title: { display: true, text: 'Zeit', color: textColor }
     };
 
-    // Diagramm-Kontexte
+    // Chart für CO2
     const co2Ctx  = document.getElementById('co2Chart').getContext('2d');
-    const tempCtx = document.getElementById('tempChart').getContext('2d');
-    const humCtx  = document.getElementById('humChart').getContext('2d');
-
-    // Charts erstellen
     const co2Chart = new Chart(co2Ctx, {
       type: 'line',
       data: {
@@ -250,9 +198,25 @@
           fill: false
         }]
       },
-      options: commonOptions
+      options: {
+        scales: {
+          x: xOptions,
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor },
+            title: { display: true, text: 'CO₂ (ppm)', color: textColor },
+            min: 0,
+            max: 2000
+          }
+        },
+        plugins: {
+          legend: { labels: { color: textColor } }
+        }
+      }
     });
 
+    // Chart für Temperatur
+    const tempCtx = document.getElementById('tempChart').getContext('2d');
     const tempChart = new Chart(tempCtx, {
       type: 'line',
       data: {
@@ -264,9 +228,25 @@
           fill: false
         }]
       },
-      options: commonOptions
+      options: {
+        scales: {
+          x: xOptions,
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor },
+            title: { display: true, text: 'Temperatur (°C)', color: textColor },
+            min: 5,
+            max: 40
+          }
+        },
+        plugins: {
+          legend: { labels: { color: textColor } }
+        }
+      }
     });
 
+    // Chart für Luftfeuchtigkeit
+    const humCtx  = document.getElementById('humChart').getContext('2d');
     const humChart = new Chart(humCtx, {
       type: 'line',
       data: {
@@ -278,7 +258,21 @@
           fill: false
         }]
       },
-      options: commonOptions
+      options: {
+        scales: {
+          x: xOptions,
+          y: {
+            ticks: { color: textColor },
+            grid: { color: gridColor },
+            title: { display: true, text: 'Luftfeuchtigkeit (%)', color: textColor },
+            min: 0,
+            max: 100
+          }
+        },
+        plugins: {
+          legend: { labels: { color: textColor } }
+        }
+      }
     });
 
     // Lokale Daten laden
@@ -327,23 +321,7 @@
       saveDataToLocalStorage();
     });
 
-    // Update-Funktion
     function updateAllCharts() {
-      // Nur wenn autoRange noch true ist, setzen wir min/max => 10-Min-Fenster
-      if (autoRange) {
-        const now = new Date();
-        const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000);
-
-        co2Chart.options.scales.x.min = tenMinAgo;
-        co2Chart.options.scales.x.max = now;
-
-        tempChart.options.scales.x.min = tenMinAgo;
-        tempChart.options.scales.x.max = now;
-
-        humChart.options.scales.x.min = tenMinAgo;
-        humChart.options.scales.x.max = now;
-      }
-
       co2Chart.data.labels = co2Data.map(d => d.x);
       co2Chart.data.datasets[0].data = co2Data;
       co2Chart.update();
@@ -401,7 +379,6 @@
         localStorage.removeItem("mqttData");
         updateAllCharts();
         console.log("Alle Daten gelöscht.");
-        autoRange = true; // Wieder standardmäßig 10min, bis wir pannen
       }
     });
   </script>
